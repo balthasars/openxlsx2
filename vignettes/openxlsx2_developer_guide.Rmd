@@ -1,0 +1,81 @@
+---
+title: "`Developer Guide"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Developing with `openxlsx2`}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+This work-in-progress article documents internal objects that underpin `openxlsx2`'s 
+architecture.
+
+Please note that the author discourages building on top of these objects
+as their stability may not be not guaranteed. Doing so would restrict our ability to 
+make changes to openxlsx2 in the future and potentially hinder ongoing development.
+
+This information is useful, however, you if you wish to contribute to `openxlsx2`.
+
+# Internals
+## `cc` – Cell Contents
+
+`cc` is an internal object that contains cell contents and attributes:
+
+   * `r`: cell reference, e.g., "A1", "B2", etc.
+   * `row_r`: row number within a given sheet
+   * `c_r`: column reference, such as `"A"`, `"B"`, etc.
+   * `c_s`: cell style index, Empty if no styling applied.
+   * `c_t`: cell type: the type of data in the cell.  Possible values are
+      *  `""`:  Numeric value (default)
+      * `"n":`  number _but unclear when this instead of  `""`_
+      * `"inlineStr"`, Inline string: string saved directly in a cell's
+         XML. Shows the actual value wrapped inside of an `<is>` tag.
+      * `"s"`, shared string: string saved in the shared string table.
+         The shared string table is used by Excel to avoid saving
+         repeated values.
+      * `"d"`: Date.
+      * `"str"`: formula string, means the cell contains a formula
+         whose result is a string.
+      * `"b"`, boolean: TRUE/FALSE values.
+      * `"e"`, error: Error values.
+   * `v`, cell value: raw value stored in the cell
+   * `f`, formula: contains the formula as a string.
+   * `f_attr`, formula attributes: Any attributes that present on
+      the formula XML element for a cell (f.e. `t` type like `"array"`
+      (formula), `ref` (range for an array formula)), etc.
+   * `is`, inline string: The actual string value for cells with `c_t == "inlineStr"`.
+
+Optional columns (only available if used): 
+  * `c_cm`, cell metadata (on cell itself): Used for advanced features like cell metadata, such as comments.
+  * `c_vm`, value meta index: (on value inside of cell): Extra information stored at the cell level, but associated with the value rather than the cell itself.
+  * `c_ph`, phonetic guide: Used for East Asian languages (e.g., Japanese) to provide phonetic information for the cell’s content. Only present if phonetic guides are used in the worksheet.
+
+All columns are of type character. If an attribute is not set, its value will be `""` .
+
+Given an example data frame like `mtcars` as input you may inspect this object like so:
+
+```{r}
+local({
+    wb <- openxlsx2::wb_workbook()$add_worksheet()$add_data(x = mtcars)
+    cell_contents_df <- wb$worksheets[[1]]$sheet_data$cc
+    print(head(cell_contents_df))
+    print(tail(cell_contents_df))
+})
+```
+
+- Source for `c_t`: [OpenXML SpreadsheetML specification](https://learn.microsoft.com/en-us/dotnet/api/documentformat.openxml.spreadsheet.cellvalues?view=openxml-2.8.1).
+- Source for column types: [OpenXML SpreadsheetML] (https://learn.microsoft.com/en-us/dotnet/api/documentformat.openxml.spreadsheet.cell?view=openxml-2.8.1)
+
+
+## `col_attr` - Column Attributes
+
+TO DO 
+
+## `row_attr` - Row Attributes
+
+TO DO 
+
+## `style_mgr` - Style Manager
+
+TO DO
+
